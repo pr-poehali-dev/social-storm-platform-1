@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS sg_users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  avatar_url TEXT DEFAULT NULL,
+  bio TEXT DEFAULT NULL,
+  role VARCHAR(20) DEFAULT 'user',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  last_seen TIMESTAMP DEFAULT NOW()
+);
