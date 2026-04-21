@@ -8,6 +8,7 @@ import AuthModal from '@/components/AuthModal';
 import HomePage from '@/pages/HomePage';
 import ChatPage from '@/pages/ChatPage';
 import TasksPage from '@/pages/TasksPage';
+import ExamsPage from '@/pages/ExamsPage';
 import VideosPage from '@/pages/VideosPage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminPage from '@/pages/AdminPage';
@@ -25,10 +26,8 @@ export default function App() {
     if (token && stored) {
       setUser(stored);
       api.auth.me().then(res => {
-        if (res.error) {
-          clearAuth();
-          setUser(null);
-        } else {
+        if (res.error) { clearAuth(); setUser(null); }
+        else {
           const updated = { ...stored, ...res };
           setUser(updated);
           localStorage.setItem('sg_user', JSON.stringify(updated));
@@ -56,18 +55,18 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center bg-storm">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center animate-fade-in">
-          <div className="text-6xl mb-4">⚡</div>
-          <div className="font-display font-bold text-xl text-foreground">Социальная Гроза</div>
-          <div className="mt-3 w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="text-7xl mb-4 float">⚡</div>
+          <div className="font-display font-black text-2xl text-gradient-orange">Социальная Гроза</div>
+          <div className="mt-4 w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background bg-storm">
+    <div className="min-h-screen">
       <Navbar
         user={user}
         activePage={page}
@@ -77,9 +76,10 @@ export default function App() {
       />
 
       <main className="pt-16">
-        {page === 'home' && <HomePage user={user} onAuthOpen={() => setAuthOpen(true)} />}
+        {page === 'home' && <HomePage user={user} onAuthOpen={() => setAuthOpen(true)} onPageChange={handlePageChange} />}
         {page === 'chat' && <ChatPage user={user} onAuthOpen={() => setAuthOpen(true)} />}
         {page === 'tasks' && <TasksPage user={user} onAuthOpen={() => setAuthOpen(true)} />}
+        {page === 'exams' && <ExamsPage user={user} onAuthOpen={() => setAuthOpen(true)} />}
         {page === 'videos' && <VideosPage />}
         {page === 'contacts' && <ContactsPage />}
         {page === 'profile' && user && <ProfilePage user={user} onUserUpdate={handleUserUpdate} />}
@@ -88,10 +88,7 @@ export default function App() {
 
       {authOpen && (
         <AuthModal
-          onSuccess={u => {
-            handleUserUpdate(u);
-            setAuthOpen(false);
-          }}
+          onSuccess={u => { handleUserUpdate(u); setAuthOpen(false); }}
           onClose={() => setAuthOpen(false)}
         />
       )}

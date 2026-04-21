@@ -3,7 +3,7 @@
     {
       "name": "Get tasks list",
       "method": "GET",
-      "path": "/?action=list",
+      "path": "/?action=tasks_list",
       "expectedStatus": 200,
       "expectedBody": {"tasks": []},
       "bodyMatcher": "partial"

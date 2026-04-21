@@ -10,12 +10,15 @@ function getToken() {
   return localStorage.getItem('sg_token') || '';
 }
 
-async function req(base: string, action: string, method = 'GET', body?: object) {
+async function req(base: string, action: string, method = 'GET', body?: object, query?: Record<string, string | number>) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const token = getToken();
   if (token) headers['X-Auth-Token'] = token;
 
-  const url = `${base}?action=${action}`;
+  let url = `${base}?action=${action}`;
+  if (query) {
+    for (const k in query) url += `&${k}=${encodeURIComponent(query[k])}`;
+  }
   const res = await fetch(url, {
     method,
     headers,
@@ -46,16 +49,26 @@ export const api = {
     delete: (id: number) => req(URLS.chat, 'delete', 'POST', { id }),
   },
   tasks: {
-    list: () => req(URLS.tasks, 'list', 'GET'),
-    complete: (id: number) => req(URLS.tasks, 'complete', 'POST', { id }),
-    create: (data: object) => req(URLS.tasks, 'create', 'POST', data),
-    delete: (id: number) => req(URLS.tasks, 'delete', 'POST', { id }),
+    list: () => req(URLS.tasks, 'tasks_list', 'GET'),
+    complete: (id: number) => req(URLS.tasks, 'tasks_complete', 'POST', { id }),
+    create: (data: object) => req(URLS.tasks, 'tasks_create', 'POST', data),
+    delete: (id: number) => req(URLS.tasks, 'tasks_delete', 'POST', { id }),
   },
   videos: {
     list: () => req(URLS.videos, 'list', 'GET'),
     create: (data: object) => req(URLS.videos, 'create', 'POST', data),
     view: (id: number) => req(URLS.videos, 'view', 'POST', { id }),
     delete: (id: number) => req(URLS.videos, 'delete', 'POST', { id }),
+  },
+  exams: {
+    list: () => req(URLS.tasks, 'exams_list', 'GET'),
+    get: (id: number) => req(URLS.tasks, 'exam_get', 'GET', undefined, { id }),
+    submit: (data: object) => req(URLS.tasks, 'exam_submit', 'POST', data),
+    create: (data: object) => req(URLS.tasks, 'exam_create', 'POST', data),
+    delete: (id: number) => req(URLS.tasks, 'exam_delete', 'POST', { id }),
+    attempts: (id: number) => req(URLS.tasks, 'exam_attempts', 'GET', undefined, { id }),
+    addQuestion: (data: object) => req(URLS.tasks, 'question_add', 'POST', data),
+    deleteQuestion: (id: number) => req(URLS.tasks, 'question_delete', 'POST', { id }),
   },
 };
 
@@ -66,4 +79,23 @@ export type User = {
   role: 'user' | 'admin';
   avatar_url?: string;
   bio?: string;
+};
+
+export type Exam = {
+  id: number;
+  title: string;
+  description: string;
+  pass_score: number;
+  time_limit_min: number;
+  questions_count: number;
+  best_score?: number;
+  created_at: string;
+};
+
+export type Question = {
+  id: number;
+  question: string;
+  options: { a: string; b: string; c?: string; d?: string };
+  correct_option: string;
+  position: number;
 };

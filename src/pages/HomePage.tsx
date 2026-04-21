@@ -16,14 +16,14 @@ interface Post {
 interface HomePageProps {
   user: User | null;
   onAuthOpen: () => void;
+  onPageChange: (p: string) => void;
 }
 
 function formatDate(dt: string) {
-  const d = new Date(dt);
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(dt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 }
 
-export default function HomePage({ user, onAuthOpen }: HomePageProps) {
+export default function HomePage({ user, onAuthOpen, onPageChange }: HomePageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,108 +34,139 @@ export default function HomePage({ user, onAuthOpen }: HomePageProps) {
     });
   }, []);
 
+  const features = [
+    { icon: 'MessageCircle', label: 'Общий чат', desc: 'Общайся в режиме реального времени', page: 'chat', color: 'from-orange-400 to-orange-600' },
+    { icon: 'Target', label: 'Задания', desc: 'Выполняй и получай очки', page: 'tasks', color: 'from-amber-400 to-orange-500' },
+    { icon: 'GraduationCap', label: 'Экзамен', desc: 'Проверь свои знания', page: 'exams', color: 'from-orange-500 to-red-500' },
+    { icon: 'Play', label: 'Видео', desc: 'Обучающие видеоматериалы', page: 'videos', color: 'from-yellow-400 to-orange-500' },
+  ];
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-orange-950 via-background to-background border-b border-border/50">
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'radial-gradient(circle at 20% 50%, #ff7800 0%, transparent 50%), radial-gradient(circle at 80% 20%, #ff4400 0%, transparent 40%)'
-        }} />
-        <div className="relative max-w-4xl mx-auto px-4 py-20 text-center">
-          <div className="text-7xl mb-6 animate-fade-in" style={{ animationDelay: '0s' }}>⚡</div>
-          <h1 className="font-display text-5xl md:text-6xl font-black text-foreground mb-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            Социальная <span className="text-primary">Гроза</span>
-          </h1>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            Сообщество для активных. Посты, чат, задания и видео — всё в одном месте.
-          </p>
-          {!user && (
-            <button
-              onClick={onAuthOpen}
-              className="animate-fade-in bg-primary hover:bg-orange-500 text-white font-display font-bold px-8 py-4 rounded-2xl text-lg transition-all duration-200 hover:scale-105 orange-glow-sm"
-              style={{ animationDelay: '0.3s' }}
-            >
-              Присоединиться →
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 py-10">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-            <Icon name="Rss" size={16} className="text-primary" />
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 dot-pattern opacity-30" />
+        <div className="relative max-w-5xl mx-auto px-4 py-20 md:py-28 text-center">
+          <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-4 py-1.5 rounded-full text-xs font-display font-bold uppercase tracking-wider mb-6 animate-fade-in border border-orange-200">
+            <span className="w-2 h-2 rounded-full bg-orange-500 pulse-ring" />
+            Добро пожаловать!
           </div>
-          <h2 className="font-display text-xl font-bold">Лента событий</h2>
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-muted-foreground text-sm">{posts.length} публикаций</span>
+          <h1 className="font-display text-5xl md:text-7xl font-black mb-5 animate-slide-up leading-[1.05]" style={{ animationDelay: '0.05s' }}>
+            Социальная<br />
+            <span className="text-gradient-orange">Гроза ⚡</span>
+          </h1>
+          <p className="text-lg md:text-xl text-foreground/70 max-w-2xl mx-auto mb-8 animate-slide-up leading-relaxed" style={{ animationDelay: '0.1s' }}>
+            Активное сообщество, где ты можешь общаться, обучаться, выполнять задания и сдавать экзамены
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 animate-slide-up" style={{ animationDelay: '0.15s' }}>
+            {!user ? (
+              <>
+                <button onClick={onAuthOpen} className="btn-primary px-8 py-4 text-base flex items-center gap-2">
+                  <Icon name="Zap" size={18} />
+                  Присоединиться
+                </button>
+                <button onClick={() => onPageChange('chat')} className="btn-ghost px-8 py-4 text-base flex items-center gap-2">
+                  <Icon name="MessageCircle" size={18} />
+                  Посмотреть чат
+                </button>
+              </>
+            ) : (
+              <button onClick={() => onPageChange('exams')} className="btn-primary px-8 py-4 text-base flex items-center gap-2">
+                <Icon name="GraduationCap" size={18} />
+                Пройти экзамен
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="max-w-5xl mx-auto px-4 pb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {features.map((f, i) => (
+            <button
+              key={f.page}
+              onClick={() => onPageChange(f.page)}
+              className="card-elevated rounded-2xl p-5 text-left group animate-slide-up"
+              style={{ animationDelay: `${0.2 + i * 0.05}s` }}
+            >
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center text-white mb-3 group-hover:scale-110 transition-transform`}>
+                <Icon name={f.icon as 'Home'} size={22} />
+              </div>
+              <div className="font-display font-bold text-sm mb-1">{f.label}</div>
+              <div className="text-xs text-muted-foreground leading-relaxed">{f.desc}</div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Feed */}
+      <section className="max-w-3xl mx-auto px-4 pb-16">
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <div className="text-xs font-display font-bold uppercase tracking-wider text-orange-600 mb-1">Новости</div>
+            <h2 className="font-display text-3xl font-black">Лента событий</h2>
+          </div>
+          <span className="text-sm text-muted-foreground font-display">{posts.length} публикаций</span>
         </div>
 
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-card border border-border rounded-2xl p-6 animate-pulse">
-                <div className="h-5 bg-secondary rounded-lg w-3/4 mb-3" />
-                <div className="h-4 bg-secondary rounded-lg w-full mb-2" />
-                <div className="h-4 bg-secondary rounded-lg w-2/3" />
+              <div key={i} className="card-elevated rounded-2xl p-6">
+                <div className="h-5 bg-orange-100 rounded-lg w-3/4 mb-3 shimmer" />
+                <div className="h-4 bg-orange-100 rounded-lg w-full mb-2 shimmer" />
+                <div className="h-4 bg-orange-100 rounded-lg w-2/3 shimmer" />
               </div>
             ))}
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <div className="text-5xl mb-4">📭</div>
-            <p className="font-display font-medium">Постов пока нет</p>
-            <p className="text-sm mt-1">Администраторы скоро опубликуют что-то интересное</p>
+          <div className="card-elevated rounded-3xl text-center py-16 px-6">
+            <div className="text-6xl mb-4">📭</div>
+            <p className="font-display font-bold text-lg">Постов пока нет</p>
+            <p className="text-sm text-muted-foreground mt-2">Админы скоро опубликуют что-то интересное</p>
           </div>
         ) : (
           <div className="space-y-4">
             {posts.map((post, i) => (
               <article
                 key={post.id}
-                className="bg-card border border-border rounded-2xl overflow-hidden card-hover animate-fade-in"
+                className="card-elevated rounded-2xl overflow-hidden animate-slide-up"
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
                 {post.is_pinned && (
-                  <div className="bg-primary/10 border-b border-primary/20 px-5 py-2 flex items-center gap-2">
-                    <Icon name="Pin" size={12} className="text-primary" />
-                    <span className="text-xs font-display font-semibold text-primary uppercase tracking-wide">Закреплено</span>
+                  <div className="gradient-orange px-5 py-2 flex items-center gap-2">
+                    <Icon name="Pin" size={12} className="text-white" />
+                    <span className="text-xs font-display font-bold text-white uppercase tracking-wider">Закреплено</span>
                   </div>
                 )}
                 <div className="p-6">
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <h3 className="font-display font-bold text-lg text-foreground leading-snug">{post.title}</h3>
-                    {post.author.role === 'admin' && (
-                      <span className="shrink-0 text-xs bg-primary/20 text-primary font-display font-semibold px-2 py-0.5 rounded-full">
-                        ADMIN
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
-                  {post.image_url && (
-                    <img src={post.image_url} alt={post.title} className="mt-4 rounded-xl w-full object-cover max-h-72" />
-                  )}
-                  <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
-                        {post.author.username[0].toUpperCase()}
-                      </div>
-                      <span className="font-medium">{post.author.username}</span>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold font-display ${post.author.role === 'admin' ? 'gradient-orange-dark' : 'gradient-orange'}`}>
+                      {post.author.username[0].toUpperCase()}
                     </div>
-                    <span className="flex items-center gap-1">
-                      <Icon name="Calendar" size={12} />
-                      {formatDate(post.created_at)}
-                    </span>
-                    <span className="flex items-center gap-1 ml-auto">
-                      <Icon name="Eye" size={12} />
-                      {post.views}
-                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-display font-bold text-sm">{post.author.username}</span>
+                        {post.author.role === 'admin' && (
+                          <span className="text-[10px] gradient-orange-dark text-white font-display font-bold px-2 py-0.5 rounded-full uppercase">ADMIN</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Icon name="Calendar" size={10} />
+                        {formatDate(post.created_at)}
+                      </div>
+                    </div>
                   </div>
+                  <h3 className="font-display font-black text-xl leading-snug mb-3">{post.title}</h3>
+                  <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                  {post.image_url && <img src={post.image_url} alt={post.title} className="mt-4 rounded-xl w-full object-cover max-h-96 border border-border" />}
                 </div>
               </article>
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

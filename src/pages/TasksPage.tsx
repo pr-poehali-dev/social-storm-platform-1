@@ -18,9 +18,9 @@ interface TasksPageProps {
 }
 
 const diffConfig = {
-  easy: { label: 'Легко', color: 'text-green-400 bg-green-400/10', icon: '🌱' },
-  medium: { label: 'Средне', color: 'text-yellow-400 bg-yellow-400/10', icon: '⚡' },
-  hard: { label: 'Сложно', color: 'text-red-400 bg-red-400/10', icon: '🔥' },
+  easy: { label: 'Легко', color: 'text-emerald-700 bg-emerald-100', emoji: '🌱', grad: 'from-emerald-400 to-emerald-600' },
+  medium: { label: 'Средне', color: 'text-orange-700 bg-orange-100', emoji: '⚡', grad: 'from-orange-400 to-orange-600' },
+  hard: { label: 'Сложно', color: 'text-red-700 bg-red-100', emoji: '🔥', grad: 'from-red-400 to-red-600' },
 };
 
 export default function TasksPage({ user, onAuthOpen }: TasksPageProps) {
@@ -29,13 +29,7 @@ export default function TasksPage({ user, onAuthOpen }: TasksPageProps) {
   const [completing, setCompleting] = useState<number | null>(null);
   const [toast, setToast] = useState('');
 
-  const load = () => {
-    api.tasks.list().then(r => {
-      setTasks(r.tasks || []);
-      setLoading(false);
-    });
-  };
-
+  const load = () => api.tasks.list().then(r => { setTasks(r.tasks || []); setLoading(false); });
   useEffect(() => { load(); }, [user]);
 
   const complete = async (id: number) => {
@@ -52,56 +46,68 @@ export default function TasksPage({ user, onAuthOpen }: TasksPageProps) {
 
   const done = tasks.filter(t => t.completed).length;
   const total = tasks.length;
+  const totalPoints = tasks.filter(t => t.completed).reduce((s, t) => s + t.reward_points, 0);
   const progress = total > 0 ? Math.round((done / total) * 100) : 0;
 
   return (
-    <div className="min-h-screen max-w-4xl mx-auto px-4 py-10">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       {toast && (
-        <div className="fixed top-20 right-4 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg font-display font-semibold animate-slide-up flex items-center gap-2">
-          <Icon name="CheckCircle" size={16} />
+        <div className="fixed top-20 right-4 z-50 gradient-orange text-white px-6 py-3.5 rounded-2xl shadow-xl font-display font-bold animate-slide-up flex items-center gap-2.5">
+          <Icon name="CheckCircle" size={18} />
           {toast}
         </div>
       )}
 
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-          <Icon name="Target" size={20} className="text-primary" />
-        </div>
-        <div>
-          <h1 className="font-display font-bold text-2xl">Задания</h1>
-          <p className="text-muted-foreground text-sm">Выполняй задания и зарабатывай очки</p>
-        </div>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="text-xs font-display font-bold uppercase tracking-wider text-orange-600 mb-1">Испытания</div>
+        <h1 className="font-display text-4xl font-black">Задания 🎯</h1>
+        <p className="text-muted-foreground mt-2">Выполняй задания и зарабатывай очки репутации</p>
       </div>
 
+      {/* Progress */}
       {user && total > 0 && (
-        <div className="bg-card border border-border rounded-2xl p-5 mb-8 animate-fade-in">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-display font-semibold">Твой прогресс</span>
-            <span className="text-sm font-bold text-primary font-display">{done}/{total}</span>
+        <div className="card-elevated rounded-3xl p-6 mb-8 animate-fade-in relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-orange-200/30 rounded-full blur-3xl" />
+          <div className="relative grid md:grid-cols-3 gap-4">
+            <div>
+              <div className="text-xs font-display font-bold uppercase text-muted-foreground tracking-wider mb-1">Прогресс</div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-4xl font-display font-black text-gradient-orange">{done}</span>
+                <span className="text-lg text-muted-foreground">/{total}</span>
+              </div>
+              <div className="mt-2 w-full bg-orange-100 rounded-full h-2 overflow-hidden">
+                <div className="gradient-orange h-full rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-display font-bold uppercase text-muted-foreground tracking-wider mb-1">Очков набрано</div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-display font-black text-gradient-orange">{totalPoints}</span>
+                <span className="text-lg">⚡</span>
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-display font-bold uppercase text-muted-foreground tracking-wider mb-1">Выполнено</div>
+              <div className="text-4xl font-display font-black text-gradient-orange">{progress}<span className="text-2xl">%</span></div>
+            </div>
           </div>
-          <div className="w-full bg-secondary rounded-full h-2.5">
-            <div
-              className="bg-gradient-to-r from-orange-600 to-orange-400 h-2.5 rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">{progress}% заданий выполнено</p>
         </div>
       )}
 
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="bg-card border border-border rounded-2xl p-6 animate-pulse">
-              <div className="h-5 bg-secondary rounded w-1/2 mb-3" />
-              <div className="h-4 bg-secondary rounded w-3/4" />
+            <div key={i} className="card-elevated rounded-2xl p-6 shimmer">
+              <div className="h-5 bg-orange-100 rounded w-1/2 mb-3" />
+              <div className="h-4 bg-orange-100 rounded w-3/4" />
             </div>
           ))}
         </div>
       ) : tasks.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <div className="text-5xl mb-4">🎯</div>
-          <p className="font-display font-medium">Заданий пока нет</p>
+        <div className="card-elevated rounded-3xl text-center py-16 px-6">
+          <div className="text-6xl mb-4">🎯</div>
+          <p className="font-display font-bold text-lg">Заданий пока нет</p>
         </div>
       ) : (
         <div className="grid gap-4">
@@ -110,50 +116,50 @@ export default function TasksPage({ user, onAuthOpen }: TasksPageProps) {
             return (
               <div
                 key={task.id}
-                className={`bg-card border rounded-2xl p-5 card-hover animate-fade-in transition-all duration-300 ${
-                  task.completed ? 'border-green-500/30 opacity-75' : 'border-border'
-                }`}
+                className={`card-elevated rounded-2xl p-6 animate-slide-up transition-all ${task.completed ? 'opacity-70 bg-emerald-50/50' : ''}`}
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
                 <div className="flex items-start gap-4">
-                  <div className="text-2xl">{diff.icon}</div>
+                  <div className={`w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br ${diff.grad} flex items-center justify-center text-2xl shadow-lg`}>
+                    {diff.emoji}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <h3 className={`font-display font-bold ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                    <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+                      <h3 className={`font-display font-black text-lg ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
                         {task.title}
                       </h3>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-display font-semibold ${diff.color}`}>
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-display font-bold ${diff.color}`}>
                           {diff.label}
                         </span>
-                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-display font-bold">
-                          +{task.reward_points} очков
+                        <span className="text-xs gradient-orange text-white px-2.5 py-1 rounded-full font-display font-bold flex items-center gap-1">
+                          <span>⚡</span>+{task.reward_points}
                         </span>
                       </div>
                     </div>
-                    <p className="text-muted-foreground text-sm leading-relaxed">{task.description}</p>
-                  </div>
-                </div>
-                <div className="mt-4 flex justify-end">
-                  {task.completed ? (
-                    <div className="flex items-center gap-1.5 text-green-400 text-sm font-display font-semibold">
-                      <Icon name="CheckCircle2" size={16} />
-                      Выполнено
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => complete(task.id)}
-                      disabled={completing === task.id}
-                      className="bg-primary hover:bg-orange-500 text-white text-sm font-display font-semibold px-5 py-2 rounded-xl transition-all disabled:opacity-60 flex items-center gap-2"
-                    >
-                      {completing === task.id ? (
-                        <Icon name="Loader2" size={14} className="animate-spin" />
+                    <p className="text-foreground/70 text-sm leading-relaxed mb-4">{task.description}</p>
+                    <div className="flex justify-end">
+                      {task.completed ? (
+                        <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-display font-bold bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
+                          <Icon name="CheckCircle2" size={16} />
+                          Выполнено
+                        </div>
                       ) : (
-                        <Icon name="Check" size={14} />
+                        <button
+                          onClick={() => complete(task.id)}
+                          disabled={completing === task.id}
+                          className="btn-primary px-5 py-2.5 text-sm flex items-center gap-2"
+                        >
+                          {completing === task.id ? (
+                            <Icon name="Loader2" size={14} className="animate-spin" />
+                          ) : (
+                            <Icon name="Check" size={14} />
+                          )}
+                          Выполнить
+                        </button>
                       )}
-                      Выполнить
-                    </button>
-                  )}
+                    </div>
+                  </div>
                 </div>
               </div>
             );
