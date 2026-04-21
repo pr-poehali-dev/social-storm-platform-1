@@ -1,5 +1,6 @@
 """
-Посты Социальной Грозы. GET /, POST /, PUT /:id, DELETE /:id
+Посты Социальной Грозы.
+action=list|create|delete передаётся через query
 """
 import json
 import os
@@ -40,9 +41,9 @@ def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
 
-    method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/')
     token = event.get('headers', {}).get('X-Auth-Token') or event.get('headers', {}).get('x-auth-token')
+    qs = event.get('queryStringParameters') or {}
+    action = qs.get('action', 'list')
     body = {}
     if event.get('body'):
         try:
@@ -50,22 +51,15 @@ def handler(event: dict, context) -> dict:
         except Exception:
             pass
 
-    path_parts = [p for p in path.split('/') if p]
-    post_id = None
-    for p in path_parts:
-        if p.isdigit():
-            post_id = int(p)
-
-    if method == 'GET':
+    if action == 'list':
         return get_posts()
-    elif method == 'POST':
+    elif action == 'create':
         return create_post(token, body)
-    elif method == 'PUT' and post_id:
-        return update_post(token, post_id, body)
-    elif method == 'DELETE' and post_id:
+    elif action == 'delete':
+        post_id = int(body.get('id', 0))
         return delete_post(token, post_id)
 
-    return json_response({'error': 'Not found'}, 404)
+    return json_response({'error': 'Unknown action'}, 400)
 
 
 def get_posts():
@@ -76,6 +70,7 @@ def get_posts():
                u.id as uid, u.username, u.avatar_url, u.role
         FROM sg_posts p
         JOIN sg_users u ON u.id = p.author_id
+        WHERE p.content != '[удалено]'
         ORDER BY p.is_pinned DESC, p.created_at DESC
         LIMIT 50
     """)
@@ -120,29 +115,6 @@ def create_post(token, body):
     return json_response({'id': post_id, 'ok': True})
 
 
-def update_post(token, post_id, body):
-    if not token:
-        return json_response({'error': 'Не авторизован'}, 401)
-    conn = get_conn()
-    cur = conn.cursor()
-    user = get_user_from_token(cur, token)
-    if not user or user[2] != 'admin':
-        conn.close()
-        return json_response({'error': 'Нет доступа'}, 403)
-
-    title = body.get('title', '').strip()
-    content = body.get('content', '').strip()
-    is_pinned = body.get('is_pinned', False)
-
-    cur.execute(
-        "UPDATE sg_posts SET title=%s, content=%s, is_pinned=%s, updated_at=NOW() WHERE id=%s",
-        (title, content, is_pinned, post_id)
-    )
-    conn.commit()
-    conn.close()
-    return json_response({'ok': True})
-
-
 def delete_post(token, post_id):
     if not token:
         return json_response({'error': 'Не авторизован'}, 401)
@@ -152,9 +124,7 @@ def delete_post(token, post_id):
     if not user or user[2] != 'admin':
         conn.close()
         return json_response({'error': 'Нет доступа'}, 403)
-    cur.execute("UPDATE sg_posts SET is_pinned = false WHERE id = %s", (post_id,))
-    cur.execute("UPDATE sg_posts SET views = 0 WHERE id = %s", (post_id,))
-    cur.execute("UPDATE sg_posts SET content = '[удалено]' WHERE id = %s", (post_id,))
+    cur.execute("UPDATE sg_posts SET content = '[удалено]', is_pinned = false WHERE id = %s", (post_id,))
     conn.commit()
     conn.close()
     return json_response({'ok': True})

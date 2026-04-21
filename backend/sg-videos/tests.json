@@ -3,7 +3,7 @@
     {
       "name": "Get videos list",
       "method": "GET",
-      "path": "/",
+      "path": "/?action=list",
       "expectedStatus": 200,
       "expectedBody": {"videos": []},
       "bodyMatcher": "partial"

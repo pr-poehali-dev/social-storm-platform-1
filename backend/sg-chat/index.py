@@ -1,5 +1,6 @@
 """
-Общий чат Социальной Грозы. GET / — список сообщений, POST / — отправить сообщение.
+Общий чат Социальной Грозы.
+action=list|send|delete через query
 """
 import json
 import os
@@ -40,9 +41,9 @@ def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
 
-    method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/')
     token = event.get('headers', {}).get('X-Auth-Token') or event.get('headers', {}).get('x-auth-token')
+    qs = event.get('queryStringParameters') or {}
+    action = qs.get('action', 'list')
     body = {}
     if event.get('body'):
         try:
@@ -50,20 +51,15 @@ def handler(event: dict, context) -> dict:
         except Exception:
             pass
 
-    path_parts = [p for p in path.split('/') if p]
-    msg_id = None
-    for p in path_parts:
-        if p.isdigit():
-            msg_id = int(p)
-
-    if method == 'GET':
+    if action == 'list':
         return get_messages()
-    elif method == 'POST':
+    elif action == 'send':
         return send_message(token, body)
-    elif method == 'DELETE' and msg_id:
+    elif action == 'delete':
+        msg_id = int(body.get('id', 0))
         return delete_message(token, msg_id)
 
-    return json_response({'error': 'Not found'}, 404)
+    return json_response({'error': 'Unknown action'}, 400)
 
 
 def get_messages():
@@ -74,6 +70,7 @@ def get_messages():
                u.id as uid, u.username, u.avatar_url, u.role
         FROM sg_messages m
         JOIN sg_users u ON u.id = m.user_id
+        WHERE m.content != '[удалено администратором]'
         ORDER BY m.created_at DESC
         LIMIT 100
     """)

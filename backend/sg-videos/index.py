@@ -1,5 +1,6 @@
 """
-Видеотека Социальной Грозы. GET / — список видео, POST / — добавить видео (только admin).
+Видеотека Социальной Грозы.
+action=list|view|create|delete через query
 """
 import json
 import os
@@ -40,9 +41,9 @@ def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
 
-    method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/')
     token = event.get('headers', {}).get('X-Auth-Token') or event.get('headers', {}).get('x-auth-token')
+    qs = event.get('queryStringParameters') or {}
+    action = qs.get('action', 'list')
     body = {}
     if event.get('body'):
         try:
@@ -50,22 +51,18 @@ def handler(event: dict, context) -> dict:
         except Exception:
             pass
 
-    path_parts = [p for p in path.split('/') if p]
-    video_id = None
-    for p in path_parts:
-        if p.isdigit():
-            video_id = int(p)
-
-    if method == 'GET' and not video_id:
+    if action == 'list':
         return get_videos()
-    elif method == 'POST' and 'view' in path_parts and video_id:
+    elif action == 'view':
+        video_id = int(body.get('id', 0))
         return add_view(video_id)
-    elif method == 'POST':
+    elif action == 'create':
         return create_video(token, body)
-    elif method == 'DELETE' and video_id:
+    elif action == 'delete':
+        video_id = int(body.get('id', 0))
         return delete_video(token, video_id)
 
-    return json_response({'error': 'Not found'}, 404)
+    return json_response({'error': 'Unknown action'}, 400)
 
 
 def get_videos():

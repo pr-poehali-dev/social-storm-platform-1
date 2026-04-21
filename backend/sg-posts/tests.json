@@ -3,7 +3,7 @@
     {
       "name": "Get posts list",
       "method": "GET",
-      "path": "/",
+      "path": "/?action=list",
       "expectedStatus": 200,
       "expectedBody": {"posts": []},
       "bodyMatcher": "partial"

@@ -1,6 +1,6 @@
 """
 Авторизация, профиль и администрирование Социальной Грозы.
-POST /register, POST /login, POST /logout, GET /me, PUT /profile, GET /admin/stats, GET /admin/users, PUT /admin/users/:id
+action передаётся через query: ?action=register|login|logout|me|profile|admin_stats|admin_users|admin_update_user
 """
 import json
 import os
@@ -54,9 +54,9 @@ def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
 
-    method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/')
     token = event.get('headers', {}).get('X-Auth-Token') or event.get('headers', {}).get('x-auth-token')
+    qs = event.get('queryStringParameters') or {}
+    action = qs.get('action', '')
     body = {}
     if event.get('body'):
         try:
@@ -64,30 +64,25 @@ def handler(event: dict, context) -> dict:
         except Exception:
             pass
 
-    path_parts = [p for p in path.split('/') if p]
-    item_id = None
-    for p in path_parts:
-        if p.isdigit():
-            item_id = int(p)
-
-    if method == 'POST' and 'register' in path_parts:
+    if action == 'register':
         return register(body)
-    elif method == 'POST' and 'login' in path_parts:
+    elif action == 'login':
         return login(body)
-    elif method == 'POST' and 'logout' in path_parts:
+    elif action == 'logout':
         return logout(token)
-    elif method == 'GET' and 'me' in path_parts:
+    elif action == 'me':
         return get_me(token)
-    elif method == 'PUT' and 'profile' in path_parts:
+    elif action == 'profile':
         return update_profile(token, body)
-    elif 'admin' in path_parts and 'stats' in path_parts:
+    elif action == 'admin_stats':
         return admin_stats(token)
-    elif 'admin' in path_parts and 'users' in path_parts and item_id and method == 'PUT':
-        return admin_update_user(token, item_id, body)
-    elif 'admin' in path_parts and 'users' in path_parts:
+    elif action == 'admin_users':
         return admin_get_users(token)
+    elif action == 'admin_update_user':
+        user_id = int(body.get('user_id', 0))
+        return admin_update_user(token, user_id, body)
 
-    return json_response({'error': 'Not found'}, 404)
+    return json_response({'error': 'Unknown action'}, 400)
 
 
 def register(body):

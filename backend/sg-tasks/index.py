@@ -1,5 +1,6 @@
 """
-Задания Социальной Грозы. GET / — список заданий, POST /complete/:id — выполнить задание.
+Задания Социальной Грозы.
+action=list|complete|create|delete через query
 """
 import json
 import os
@@ -40,9 +41,9 @@ def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
 
-    method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/')
     token = event.get('headers', {}).get('X-Auth-Token') or event.get('headers', {}).get('x-auth-token')
+    qs = event.get('queryStringParameters') or {}
+    action = qs.get('action', 'list')
     body = {}
     if event.get('body'):
         try:
@@ -50,22 +51,18 @@ def handler(event: dict, context) -> dict:
         except Exception:
             pass
 
-    path_parts = [p for p in path.split('/') if p]
-    task_id = None
-    for p in path_parts:
-        if p.isdigit():
-            task_id = int(p)
-
-    if method == 'GET':
+    if action == 'list':
         return get_tasks(token)
-    elif method == 'POST' and 'complete' in path_parts and task_id:
+    elif action == 'complete':
+        task_id = int(body.get('id', 0))
         return complete_task(token, task_id)
-    elif method == 'POST' and not task_id:
+    elif action == 'create':
         return create_task(token, body)
-    elif method == 'DELETE' and task_id:
+    elif action == 'delete':
+        task_id = int(body.get('id', 0))
         return delete_task(token, task_id)
 
-    return json_response({'error': 'Not found'}, 404)
+    return json_response({'error': 'Unknown action'}, 400)
 
 
 def get_tasks(token):

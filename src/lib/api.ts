@@ -10,12 +10,13 @@ function getToken() {
   return localStorage.getItem('sg_token') || '';
 }
 
-async function req(base: string, path: string, method = 'GET', body?: object) {
+async function req(base: string, action: string, method = 'GET', body?: object) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const token = getToken();
   if (token) headers['X-Auth-Token'] = token;
 
-  const res = await fetch(`${base}${path}`, {
+  const url = `${base}?action=${action}`;
+  const res = await fetch(url, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
@@ -25,36 +26,36 @@ async function req(base: string, path: string, method = 'GET', body?: object) {
 
 export const api = {
   auth: {
-    register: (data: object) => req(URLS.auth, '/register', 'POST', data),
-    login: (data: object) => req(URLS.auth, '/login', 'POST', data),
-    logout: () => req(URLS.auth, '/logout', 'POST'),
-    me: () => req(URLS.auth, '/me'),
-    updateProfile: (data: object) => req(URLS.auth, '/profile', 'PUT', data),
-    adminStats: () => req(URLS.auth, '/admin/stats'),
-    adminUsers: () => req(URLS.auth, '/admin/users'),
-    adminUpdateUser: (id: number, data: object) => req(URLS.auth, `/admin/users/${id}`, 'PUT', data),
+    register: (data: object) => req(URLS.auth, 'register', 'POST', data),
+    login: (data: object) => req(URLS.auth, 'login', 'POST', data),
+    logout: () => req(URLS.auth, 'logout', 'POST'),
+    me: () => req(URLS.auth, 'me', 'GET'),
+    updateProfile: (data: object) => req(URLS.auth, 'profile', 'PUT', data),
+    adminStats: () => req(URLS.auth, 'admin_stats', 'GET'),
+    adminUsers: () => req(URLS.auth, 'admin_users', 'GET'),
+    adminUpdateUser: (id: number, data: object) => req(URLS.auth, 'admin_update_user', 'PUT', { user_id: id, ...data }),
   },
   posts: {
-    list: () => req(URLS.posts, '/'),
-    create: (data: object) => req(URLS.posts, '/', 'POST', data),
-    delete: (id: number) => req(URLS.posts, `/${id}`, 'DELETE'),
+    list: () => req(URLS.posts, 'list', 'GET'),
+    create: (data: object) => req(URLS.posts, 'create', 'POST', data),
+    delete: (id: number) => req(URLS.posts, 'delete', 'POST', { id }),
   },
   chat: {
-    messages: () => req(URLS.chat, '/'),
-    send: (content: string) => req(URLS.chat, '/', 'POST', { content }),
-    delete: (id: number) => req(URLS.chat, `/${id}`, 'DELETE'),
+    messages: () => req(URLS.chat, 'list', 'GET'),
+    send: (content: string) => req(URLS.chat, 'send', 'POST', { content }),
+    delete: (id: number) => req(URLS.chat, 'delete', 'POST', { id }),
   },
   tasks: {
-    list: () => req(URLS.tasks, '/'),
-    complete: (id: number) => req(URLS.tasks, `/complete/${id}`, 'POST'),
-    create: (data: object) => req(URLS.tasks, '/', 'POST', data),
-    delete: (id: number) => req(URLS.tasks, `/${id}`, 'DELETE'),
+    list: () => req(URLS.tasks, 'list', 'GET'),
+    complete: (id: number) => req(URLS.tasks, 'complete', 'POST', { id }),
+    create: (data: object) => req(URLS.tasks, 'create', 'POST', data),
+    delete: (id: number) => req(URLS.tasks, 'delete', 'POST', { id }),
   },
   videos: {
-    list: () => req(URLS.videos, '/'),
-    create: (data: object) => req(URLS.videos, '/', 'POST', data),
-    view: (id: number) => req(URLS.videos, `/view/${id}`, 'POST'),
-    delete: (id: number) => req(URLS.videos, `/${id}`, 'DELETE'),
+    list: () => req(URLS.videos, 'list', 'GET'),
+    create: (data: object) => req(URLS.videos, 'create', 'POST', data),
+    view: (id: number) => req(URLS.videos, 'view', 'POST', { id }),
+    delete: (id: number) => req(URLS.videos, 'delete', 'POST', { id }),
   },
 };
 
